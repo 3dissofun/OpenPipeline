@@ -1,0 +1,68 @@
+BlenderPipe/
+	__init__.py
+	core/
+	ui/
+	utils/
+
+Needed functionality:
+	Track multiple projects
+	Build Project Structure from config
+	Add/Remove shots/assets and then update config to reflect
+	Publish tracking for each asset/shot task
+	WIP saving
+	Publish comments
+	Pushing publish to all dependancies
+	Multi shot/asset managing interface
+	in file explorer a "jump to project" feature to quickly navigate
+
+NEW PLAN:
+
+projects.json:
+{
+	"PRA":
+	{
+		"name":"ProjectA",
+		"root":"/home/projects/ProjectA",
+		"settings":{"fps":30,"res":[2048,2048]}
+	},
+	"episodes": {
+    01: {
+        010: [010, 020, 030],
+        020: [010]
+		}
+	},
+	"assets":{
+		"CHR":{
+			"CHR_John":{"tasks":{"MDL":{"exists":True,"version":2}},"dependancies":[]}
+		}
+		"ENV":...
+	}
+}
+
+context.py:
+	getCurrentJobCode() -> "PRA" #(jobCode) read the session file and return the projects name for that job
+	getNameFromJobCode(jobCode) -> "projectA" #(name) find the project in the projects.json and return the associated name 
+	getCurrentPipeObject() -> pipelineObject #return the PipleineObject of the currently open file
+
+piplelineObject.py:
+	getType() -> "SHOT","ASSET","NONE"
+	getAssetType -> "CHR","ENV","PRP","NUL"
+	getTask() -> "FX3","MDL","ANM","NUL" #Return the active task of the pipelineObject
+	getVersion() -> 2 #Return the version number of the current pipelineClass, if no pipe class return -1
+	incrementVersion()
+	sync() #Method to sync version/type/task to reality
+
+fileManager.py:
+	createProject(code,root,name,episodes) #Setup directory Structure
+
+	createAsset(name) #Names first 3 letters should be taken as the type. Type should be verified against prefs
+	removeAsset(name)
+
+	createEpisodes(episodes) #Should care not to overwrite existing data
+	removeShot(ep,sq,sh)
+	
+	loadShot(ep,sq,sh,task)
+	importObject(pipelineObject,linked)
+
+	publishFile(pipelineObject)
+

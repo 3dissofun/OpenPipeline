@@ -1,0 +1,9 @@
+{
+    "allowedAssetTypes":["CHR","ENV","PRP"],
+    "allowedShotTasks":["Layout","Animation","FX_3D","Dressing","Lighting","Compositing"],
+    "allowedAssetTasks":["Modelling","Shading","Rigging"],
+    "blenderExe":{
+        "windows":"C:/Program Files/Blender Foundation/Blender 5.1/blender.exe",
+        "linux":"blender"
+    }
+}
