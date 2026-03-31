@@ -1,8 +1,0 @@
-[] - Expand interface to create assets per project
-[] - Make blender executable unique per project
-[] - Client side: Identify which project a file is apart of
-[] - Expand server requests to episodes,sequences and shots per project
-[] - Allow creation of episodes, sequences and shots in bulk
-[] - Server needs to dynamically run more threads to handle more traffic
-[] - Have an option to make directories when making project from scratch
-[] - Switching projects from within blender (reload button to update exe)
