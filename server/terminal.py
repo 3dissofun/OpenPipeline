@@ -49,6 +49,8 @@ def setServerInfo(startServerFun,restartServerFun,servers):
 
 # --- Command Handlers ---
 
+# CORE TERMINAL COMMANDS
+
 def cmd_help(args):
     for name, (fn, description) in COMMANDS.items():
         terminalOut(f"  {name:<12} {description}")
@@ -57,8 +59,17 @@ def cmd_stop(args):
     global running
     running = False
 
+def cmd_restart(args):
+    terminalOut("Restarting Process...")
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+def cmd_clear(args):
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+# PIPELINE MAKE COMMANDS
+
 def cmd_mkprj(args):
-    if len(args) < 3:
+    if (len(args) < 3) or (len(args[1]) > 3):
         terminalOut("Usage: mkprj <name> <code> <directory>")
         return
     
@@ -91,6 +102,8 @@ def cmd_mksq(args):
     projectCode = str.lower(args[0])
     epCode = str.lower(args[1])
     sqCode = str.lower(args[2])
+    if "ep" not in epCode:
+        epCode = f"ep{epCode}"
     if "sq" not in sqCode:
         sqCode = f"sq{sqCode}"
     if len(args) > 3:
@@ -102,25 +115,104 @@ def cmd_mksq(args):
 
 def cmd_mksh(args):
     if len(args) < 4:
-        terminalOut("Usage: mksq <PRA> <ep101> <sq101> <sh010> <name(optional)>")
+        terminalOut("Usage: mksh <PRA> <ep101> <sq101> <sh010> <name(optional)>")
         return
     
     projectCode = str.lower(args[0])
     epCode = str.lower(args[1])
     sqCode = str.lower(args[2])
     shCode = str.lower(args[3])
+    if "ep" not in epCode:
+        epCode = f"ep{epCode}"
+    if "sq" not in sqCode:
+        sqCode = f"sq{sqCode}"
     if "sh" not in shCode:
-        shCode = f"sq{shCode}"
+        shCode = f"sh{shCode}"
     if len(args) > 4:
         shName = args[4]
     else:
         shName = ""
 
-    sendRequest("mksq", {"project_code":projectCode, "ep_code":epCode, "sq_code":sqCode, "code":shCode, "name":shName})
+    sendRequest("mksh", {"project_code":projectCode, "ep_code":epCode, "sq_code":sqCode, "code":shCode, "name":shName})
 
-def cmd_restart(args):
-    terminalOut("Restarting Process...")
-    os.execv(sys.executable, [sys.executable] + sys.argv)
+def cmd_mksqs(args):
+    if len(args) < 3:
+        terminalOut("Usage: msksqs <PRA> <ep101> <count> <startSequence(optional)> <stepSize(optional)>")
+        return
+    
+    projectCode = str.lower(args[0])
+    epCode = str.lower(args[1])
+
+    try:
+        count = int(args[2])
+        if len(args) == 4:
+            startCode = int(args[3])
+        else:
+            startCode = 10
+        
+        if len(args) == 5:
+            stepSize = int(args[4])
+        else:
+            stepSize = 10
+    except ValueError:
+        terminalOut("count, startShot or stepSize must be an integer")
+    
+    created = 0
+    for i in range(count):
+        sqNum = startCode + (i*stepSize)
+        sqCode = f"sq{sqNum:03d}"
+        cmd_mksq([projectCode,epCode,sqCode])
+        created += 1
+    
+def cmd_mkshs(args):
+    if len(args) < 4:
+        terminalOut("Usage: mkshs <PRA> <ep101> <sq101> <count> <startShot(optional)> <stepSize(optional)>")
+    projectCode = str.lower(args[0])
+    epCode = str.lower(args[1])
+    sqCode = str.lower(args[2])
+    try:
+        count = int(args[3])
+        
+        if len(args) == 5:
+            startCode = int(args[4])
+        else:
+            startCode = 10
+        
+        if len(args) == 6:
+            stepSize = int(args[5])
+        else:
+            stepSize = 10
+    except ValueError:
+        terminalOut("count, startShot or stepSize must be an integer")
+
+    created = 0
+    for i in range(count):
+        shNum = startCode + (i*stepSize)
+        shCode = f"sh{shNum:03d}"
+        cmd_mksh([projectCode,epCode,sqCode,shCode])
+        created += 1
+
+# PIPELINE REMOVE COMMANDS
+
+def cmd_rmsh(args):
+    if len(args) < 4:
+        terminalOut("Usage: rmsh <PRA> <ep101> <sq101> <sh010>")
+        return
+    prCode = str.lower(args[0])
+    epCode = str.lower(args[1])
+    sqCode = str.lower(args[2])
+    shCode = str.lower(args[3])
+
+    if "ep" not in epCode:
+        epCode = f"ep{epCode}"
+    if "sq" not in sqCode:
+        sqCode = f"sq{sqCode}"
+    if "sh" not in shCode:
+        shCode = f"sh{shCode}"
+
+    sendRequest("rmsh",{"project_code":prCode,"ep_code":epCode,"sq_code":sqCode,"sh_code":shCode})
+    
+# SERVER COMMANDS
 
 def cmd_startflask(args):
     global _serversRef, _startServerFun
@@ -163,8 +255,7 @@ def cmd_listflask(args):
     for port in _serversRef:
         terminalOut(f"Flask server running on port {port}")
 
-def cmd_clear(args):
-    os.system('cls' if os.name == 'nt' else 'clear')
+# DATA BASE COMMANDS
 
 def cmd_builddb(args):
     utils.setPaths()
@@ -191,6 +282,11 @@ def cmd_removedb(args):
     else:
         terminalOut("No database to remove")
 
+# READ COMMANDS
+
+def cmd_lsprjs(args):
+    getRequest("lsprjs")
+    
 # --- Command Registry ---
 # Format: "command": (handler_function, "description shown in help")
 
@@ -203,6 +299,10 @@ COMMANDS = {
     "mkep": (cmd_mkep, "Make an episode in a project. Usage: mkep <projectCode> <epCode> <epName(optional)>"),
     "mksq": (cmd_mksq, "Make a sequence in a projects episode. Usage: mkep <projectCode> <epCode> <sqCode> <sqName(optional)>"),
     "mksh" : (cmd_mksh, "Make a shot in a sequence in an episode. Usage: mksh <projectCode> <epCode> <sqCode> <shName(Optional)>"),
+    "mkshs" : (cmd_mkshs, "Make shots in bulk in a sequence. Usage: mkshs <PRA> <ep101> <sq101> <count> <startShot(optional)> <stepSize(optional)>"),
+    "mksqs" : (cmd_mksqs, "Make sequences in bulk in an episode. Usage: mksqs <PRA> <ep101> <count> <startSequence(optional)> <stepSize(optional)>"),
+    "rmsh" : (cmd_rmsh, "Remove a shot from a sequence. Usage: rmsh <PRA> <ep101> <sq101> <sh010>"),
+    "lsprjs" : (cmd_lsprjs, "List all projects in the database"),
     "builddb": (cmd_builddb, "Build a production database from schema if it doesnt exist"),
     "removedb": (cmd_removedb, "Delete the existing production database"),
     "startflask": (cmd_startflask,   "Start a server on a given port. Usage: startflask <port>"),
@@ -221,11 +321,35 @@ def sendRequest(action, payload=None):
         responseData = response.json()
 
         if isinstance(responseData,dict):
-            for key,value in responseData.items():
-                terminalOut(f"{key}:{value}")
+            terminalOut(responseData["status"])
+            terminalOut(responseData["message"])
         else:
-            terminalOut(str(responseData))
+            if responseData:
+                terminalOut(str(responseData))
+            else:
+                terminalOut("No repsonse from server")
 
+    except requests.exceptions.ConnectionError:
+        terminalOut("Error: Could not connect to server. Is it running?")
+        terminalOut(serverUrl)
+    except requests.exceptions.HTTPError as e:
+        terminalOut(f"Server error: {e.response.status_code} - {e.response.text}")
+    except Exception as e:
+        terminalOut(f"Unexpected error: {e}")
+
+def getRequest(action, params=None):
+    try:
+        response = requests.get(f"{serverUrl}/{action}", params=params)
+        response.raise_for_status()
+        responseData = response.json()
+        if isinstance(responseData, dict):
+            terminalOut(responseData["status"])
+            terminalOut(responseData["message"])
+        else:
+            if responseData:
+                terminalOut(str(responseData))
+            else:
+                terminalOut("No response from server")
     except requests.exceptions.ConnectionError:
         terminalOut("Error: Could not connect to server. Is it running?")
         terminalOut(serverUrl)

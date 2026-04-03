@@ -31,12 +31,22 @@ def initDB():
     print("DataBase Created")  
 
 def getDB():
-    setPaths()
     global dataBase
+    setPaths()
+    if not DBexists():
+        return
     connection = sqlite3.connect(dataBase)
     connection.row_factory = sqlite3.Row # Rows as dictionaries
     connection.execute("PRAGMA foreign_keys = ON") # Enforce ON DELETE CASCADE etc.
     return connection
+
+def DBexists():
+    global dataBase
+    setPaths()
+    if os.path.exists(dataBase):
+        return True
+    else:
+        return False
 
 def getBlenderExe(): # Get the executable from the json file depending on host OS
     global serverConfig
@@ -57,7 +67,24 @@ def getBlenderExe(): # Get the executable from the json file depending on host O
         blenderExe = configData["blenderExe"][platform]
     except KeyError:
         raise KeyError(f"No blender path found for platform '{platform}' in server config.json")
+        return
     
     if (not os.path.exists(blenderExe))  and sys.platform == "win32":
         raise FileNotFoundError(f"Blender executable not found at configured path: {blenderExe}")
+        return
     return blenderExe
+
+def getShotTasks():
+    global serverConfig
+    setPaths()
+    if not os.path.exists(serverConfig):
+        print(f"ERROR: No server config file found at {serverConfig}")
+        return
+    with open(serverConfig,"r") as file:
+        configData = json.load(file)
+    try:
+        tasks = configData["allowedShotTasks"]
+        return tasks
+    except Exception as e:
+        raise KeyError(f"No allowedTasks configuration found in server config.json")
+        return

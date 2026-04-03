@@ -2,7 +2,7 @@ CREATE TABLE projects (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     name         TEXT NOT NULL UNIQUE,
     code         TEXT,
-    dir          TEXT
+    dir          TEXT NOT NULL
 );
 
 CREATE TABLE episodes (
@@ -10,7 +10,7 @@ CREATE TABLE episodes (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name       TEXT,
     code       TEXT NOT NULL,
-    dir        TEXT,
+    dir        TEXT NOT NULL,
     UNIQUE (project_id, code)
 );
 
@@ -20,18 +20,20 @@ CREATE TABLE sequences (
     episode_id INTEGER REFERENCES episodes(id) ON DELETE SET NULL,
     name       TEXT,
     code       TEXT NOT NULL,
-    dir        TEXT,
+    dir        TEXT NOT NULL,
     UNIQUE (project_id, code)
 );
 
 CREATE TABLE shots (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    episode_id   INTEGER NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
     sequence_id  INTEGER NOT NULL REFERENCES sequences(id) ON DELETE CASCADE,
     name         TEXT,
     code         TEXT NOT NULL,
     frame_start  INTEGER,
     frame_end    INTEGER,
-    dir          TEXT,
+    dir          TEXT NOT NULL,
     UNIQUE (sequence_id, code)
 );
 
